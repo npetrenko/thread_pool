@@ -7,6 +7,7 @@
 #include <include/threading/util.hpp>
 
 class ConditionVariable {
+public:
     void Wait(Flag* flag) const {
 	while (true) {
 	    uint32_t val = flag->data_.load();
@@ -21,10 +22,7 @@ class ConditionVariable {
                     continue;
                 }
             }
-	    uint32_t new_val = SetBit(val, 1);
-	    if (flag->data_.compare_exchange_weak(val, new_val)) {
-		break;
-	    }
+	    break;
 	}
     }
 };

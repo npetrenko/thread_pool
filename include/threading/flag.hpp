@@ -13,9 +13,9 @@ class Flag {
 public:
     void Set() {
         while (true) {
-            uint32_t val = data_.load();
+            uint32_t val = data_.load(std::memory_order_relaxed);
             uint32_t new_val = SetBit(val, 0);
-            if (data_.compare_exchange_weak(val, new_val)) {
+            if (data_.compare_exchange_weak(val, new_val, std::memory_order_relaxed)) {
                 break;
             }
         }
@@ -25,17 +25,17 @@ public:
         while (true) {
             uint32_t val = data_.load();
             uint32_t new_val = UnsetBit(val, 0);
-            if (data_.compare_exchange_weak(val, new_val)) {
+            if (data_.compare_exchange_weak(val, new_val, std::memory_order_relaxed)) {
                 break;
             }
         }
     }
 
     bool IsSet() {
-	uint32_t val = data_.load();
+	uint32_t val = data_.load(std::memory_order_relaxed);
         return TestBit(val, 0);
     }
 
 private:
-    std::atomic<uint32_t> data_;
+    std::atomic<uint32_t> data_{0};
 };

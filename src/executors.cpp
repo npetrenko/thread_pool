@@ -11,6 +11,8 @@
 #include <optional>
 #include <vector>
 
+#include <include/threading/cond_var.hpp>
+
 struct OnTaskFinishCallback {
     Task* task;
     void operator()(std::exception_ptr eptr) const;
@@ -32,8 +34,10 @@ private:
     void PoolLoop();
     void ProcessSingleTask(ElemT&& pool_element);
 
-    std::mutex mut_;
-    std::condition_variable pool_cv_;
+    Flag threads_have_work_;
+
+    Mutex mut_{&threads_have_work_};
+    ConditionVariable pool_cv_;
 
     std::deque<ElemT> pool_;
     std::vector<std::thread> threads_;
@@ -98,8 +102,9 @@ bool ThreadPool::Run(std::shared_ptr<Task> fun, std::optional<OnTaskFinishCallba
             return false;
         }
         pool_.emplace_back(std::move(fun), std::move(on_execution));
+        threads_have_work_.Set();
     }
-    pool_cv_.notify_one();
+    // pool_cv_.notify_one();
     return true;
 }
 
@@ -107,8 +112,9 @@ void ThreadPool::StartShutdown() {
     {
         std::lock_guard lock(mut_);
         stopped_ = true;
+        threads_have_work_.Set();
     }
-    pool_cv_.notify_all();
+    // pool_cv_.notify_all();
 }
 
 void ThreadPool::WaitShutdown() {
@@ -133,18 +139,23 @@ void ThreadPool::PoolLoop() {
         {
             std::unique_lock lock(mut_);
             if (pool_.empty() && !stopped_) {
-                pool_cv_.wait(lock, [&] { return !(pool_.empty() && !stopped_); });
+                // pool_cv_.wait(lock, [&] { return !(pool_.empty() && !stopped_); });
+		pool_cv_.Wait(&threads_have_work_);
             }
             if (stopped_ && pool_.empty()) {
                 return;
             }
+	    assert(!pool_.empty());
 
             current_execution = std::move(pool_.front());
             pool_.pop_front();
-            needs_notify = !pool_.empty();
+            needs_notify = !pool_.empty() || stopped_;
+	    if (!needs_notify) {
+		threads_have_work_.Unset();
+	    }
         }
         if (needs_notify) {
-            pool_cv_.notify_one();
+            // pool_cv_.notify_one();
         }
         ProcessSingleTask(std::move(current_execution));
     }
