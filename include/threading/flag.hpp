@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <include/threading/util.hpp>
 
 class Mutex;
 class ConditionVariable;
@@ -13,7 +14,7 @@ public:
     void Set() {
         while (true) {
             uint32_t val = data_.load();
-            uint32_t new_val = val | 1;
+            uint32_t new_val = SetBit(val, 0);
             if (data_.compare_exchange_weak(val, new_val)) {
                 break;
             }
@@ -23,7 +24,7 @@ public:
     void Unset() {
         while (true) {
             uint32_t val = data_.load();
-            uint32_t new_val = val & ~((uint32_t)1);
+            uint32_t new_val = UnsetBit(val, 0);
             if (data_.compare_exchange_weak(val, new_val)) {
                 break;
             }
@@ -31,7 +32,8 @@ public:
     }
 
     bool IsSet() {
-        return data_.load() & (uint32_t)1;
+	uint32_t val = data_.load();
+        return TestBit(val, 0);
     }
 
 private:

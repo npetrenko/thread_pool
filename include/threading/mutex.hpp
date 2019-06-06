@@ -3,6 +3,7 @@
 #include <thread>
 
 #include <include/threading/flag.hpp>
+#include <include/threading/util.hpp>
 
 class Mutex {
 public:
@@ -17,11 +18,11 @@ public:
     void Lock() const {
 	while (true) {
 	    uint32_t val = flag_->data_.load();
-	    if (val & 2) {
+	    if (TestBit(val, 1)) {
 		std::this_thread::yield();
 		continue;
 	    }
-	    uint32_t new_val = val | 2;
+	    uint32_t new_val = SetBit(val, 1);
 	    if (flag_->data_.compare_exchange_weak(val, new_val)) {
 		break;
 	    }
@@ -31,7 +32,7 @@ public:
     void Unlock() const {
 	while (true) {
 	    uint32_t val = flag_->data_.load();
-	    uint32_t new_val = val & ~((uint32_t)2);
+	    uint32_t new_val = UnsetBit(val, 1);
 	    if (flag_->data_.compare_exchange_weak(val, new_val)) {
 		break;
 	    }
