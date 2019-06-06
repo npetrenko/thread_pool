@@ -34,6 +34,9 @@ public:
 
 	for (auto& task: tasks) {
 	    task->Wait();
+	    if (task->IsFailed()) {
+		std::rethrow_exception(task->GetError());
+	    }
 	}
     }
 

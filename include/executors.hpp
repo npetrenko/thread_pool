@@ -23,7 +23,7 @@ public:
     virtual void WaitShutdown() = 0;
 
     template <class T, class FuncT>
-    FuturePtr<T, FuncT> Invoke(FuncT&& fn);
+    FuturePtr<T, FuncT> Invoke(FuncT fn);
 
 protected:
     inline static void SetCompleted(Task* task);

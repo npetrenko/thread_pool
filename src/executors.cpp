@@ -18,14 +18,9 @@ struct OnTaskFinishCallback {
 
 class ThreadPool {
 public:
-    using CallbackT = OnTaskFinishCallback;
-
     explicit ThreadPool(int num_threads);
 
-    bool Run(std::shared_ptr<Task> fun, std::optional<CallbackT> on_execution);
-    bool Run(std::shared_ptr<Task> fun) {
-        return Run(std::move(fun), std::nullopt);
-    }
+    bool Run(std::shared_ptr<Task> fun, std::optional<OnTaskFinishCallback> on_execution = std::nullopt);
 
     void StartShutdown();
     void WaitShutdown();
@@ -33,7 +28,7 @@ public:
     ~ThreadPool();
 
 private:
-    using ElemT = std::pair<std::shared_ptr<Task>, std::optional<CallbackT>>;
+    using ElemT = std::pair<std::shared_ptr<Task>, std::optional<OnTaskFinishCallback>>;
     void PoolLoop();
     void ProcessSingleTask(ElemT&& pool_element);
 
@@ -85,8 +80,7 @@ std::shared_ptr<Executor> MakeThreadPoolExecutor(int num_threads) {
 }
 
 Executor* GetGlobalExecutor() {
-    static auto executor =
-        std::make_unique<ThreadPoolExecutor>(std::thread::hardware_concurrency());
+    static auto executor{std::make_unique<ThreadPoolExecutor>(std::thread::hardware_concurrency())};
     return executor.get();
 }
 
@@ -97,7 +91,7 @@ ThreadPool::ThreadPool(int num_threads) {
     }
 }
 
-bool ThreadPool::Run(std::shared_ptr<Task> fun, std::optional<CallbackT> on_execution) {
+bool ThreadPool::Run(std::shared_ptr<Task> fun, std::optional<OnTaskFinishCallback> on_execution) {
     {
         std::lock_guard lock(mut_);
         if (stopped_) {

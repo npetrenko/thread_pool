@@ -7,6 +7,7 @@ template <class T, class FuncT>
 class Future : public Task {
 public:
     friend class Executor;
+    
     explicit Future(FuncT func) : func_{func} {
     }
 
@@ -36,8 +37,8 @@ private:
 };
 
 template <class T, class FuncT>
-FuturePtr<T, FuncT> Executor::Invoke(FuncT&& fn) {
-    auto task = std::make_shared<Future<T, FuncT>>(std::forward<FuncT>(fn));
+FuturePtr<T, FuncT> Executor::Invoke(FuncT fn) {
+    auto task = std::make_shared<Future<T, FuncT>>(std::move(fn));
     Submit(task);
     return task;
 }
