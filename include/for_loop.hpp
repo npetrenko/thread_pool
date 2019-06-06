@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 
 #include <include/future.hpp>
 
@@ -12,14 +13,15 @@ public:
     }
 
     template <class FuncT>
-    void operator()(FuncT func) const {
+    void operator()(FuncT func) && {
         std::vector<std::shared_ptr<Task>> tasks;
 
-        size_t piece_size = (to_ - from_) / (static_cast<size_t>(step_complexity_) + 16u);
+        size_t piece_size = (to_ - from_) / std::max(step_complexity_, (uint8_t)16);
         piece_size = std::max((size_t)1, piece_size);
-	tasks.reserve((to_ - from_) / piece_size);
 
-	for (size_t begin_ix = from_; begin_ix < to_; begin_ix += piece_size) {
+        tasks.reserve(1 + ((to_ - from_) / piece_size));
+
+        for (size_t begin_ix = from_; begin_ix < to_; begin_ix += piece_size) {
 	    size_t end_ix = begin_ix + piece_size;
 	    end_ix = std::min(end_ix, to_);
             auto work = [begin_ix, end_ix, func]() {

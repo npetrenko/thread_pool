@@ -7,8 +7,11 @@ template <class T, class FuncT>
 class Future : public Task {
 public:
     friend class Executor;
-    
-    explicit Future(FuncT func) : func_{func} {
+
+    explicit Future(const FuncT& func) : func_{func} {
+    }
+
+    explicit Future(FuncT&& func) : func_{std::move(func)} {
     }
 
     void Run() override {
@@ -37,8 +40,8 @@ private:
 };
 
 template <class T, class FuncT>
-FuturePtr<T, FuncT> Executor::Invoke(FuncT fn) {
-    auto task = std::make_shared<Future<T, FuncT>>(std::move(fn));
+FuturePtr<T, std::decay_t<FuncT>> Executor::Invoke(FuncT&& fn) {
+    auto task = std::make_shared<Future<T, std::decay_t<FuncT>>>(std::forward<FuncT>(fn));
     Submit(task);
     return task;
 }

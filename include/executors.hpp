@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 
 struct Unit {
 };
@@ -23,7 +24,7 @@ public:
     virtual void WaitShutdown() = 0;
 
     template <class T, class FuncT>
-    FuturePtr<T, FuncT> Invoke(FuncT fn);
+    FuturePtr<T, std::decay_t<FuncT>> Invoke(FuncT&& fn);
 
 protected:
     inline static void SetCompleted(Task* task);
