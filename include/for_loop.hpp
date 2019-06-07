@@ -22,8 +22,8 @@ public:
         tasks.reserve(1 + ((to_ - from_) / piece_size));
 
         for (size_t begin_ix = from_; begin_ix < to_; begin_ix += piece_size) {
-	    size_t end_ix = begin_ix + piece_size;
-	    end_ix = std::min(end_ix, to_);
+            size_t end_ix = begin_ix + piece_size;
+            end_ix = std::min(end_ix, to_);
             auto work = [begin_ix, end_ix, func]() {
                 for (size_t i = begin_ix; i < end_ix; ++i) {
                     func(i);
@@ -31,15 +31,15 @@ public:
                 return Unit{};
             };
 
-	    tasks.push_back(exec_->Invoke<Unit>(work));
+            tasks.push_back(exec_->Invoke<Unit>(work));
         }
 
-	for (auto& task: tasks) {
-	    task->Wait();
-	    if (task->IsFailed()) {
-		std::rethrow_exception(task->GetError());
-	    }
-	}
+        for (auto& task : tasks) {
+            task->Wait();
+            if (task->IsFailed()) {
+                std::rethrow_exception(task->GetError());
+            }
+        }
     }
 
 private:
