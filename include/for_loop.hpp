@@ -14,6 +14,12 @@ public:
 
     template <class FuncT>
     void operator()(FuncT func) && {
+        // check if we are not running inside the executor
+        if (NeedsFallback()) {
+            FallbackLoop(std::move(func));
+            return;
+        }
+
         std::vector<std::shared_ptr<Task>> tasks;
 
         size_t piece_size = (to_ - from_) / std::max(step_complexity_, (uint8_t)16);
@@ -43,6 +49,21 @@ public:
     }
 
 private:
+    template <class FuncT>
+    void FallbackLoop(FuncT func) const {
+        for (size_t i = from_; i < to_; ++i) {
+            func(i);
+        }
+    }
+
+    inline bool NeedsFallback() const {
+        auto tid = std::this_thread::get_id();
+        if (exec_->GetWorkerThreadIds().count(tid)) {
+            return true;
+        }
+        return false;
+    }
+
     const size_t from_, to_;
     Executor* const exec_;
     const uint8_t step_complexity_;

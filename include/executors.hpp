@@ -2,9 +2,10 @@
 
 #include <memory>
 #include <type_traits>
+#include <thread>
+#include <set>
 
-struct Unit {
-};
+struct Unit {};
 
 class Task;
 
@@ -25,6 +26,8 @@ public:
 
     template <class T, class FuncT>
     FuturePtr<T, std::decay_t<FuncT>> Invoke(FuncT&& fn);
+
+    virtual const std::set<std::thread::id>& GetWorkerThreadIds() const = 0;
 
 protected:
     inline static void SetCompleted(Task* task);

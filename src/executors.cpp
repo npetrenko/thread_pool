@@ -20,10 +20,13 @@ class ThreadPool {
 public:
     explicit ThreadPool(int num_threads);
 
-    bool Run(std::shared_ptr<Task> fun, std::optional<OnTaskFinishCallback> on_execution = std::nullopt);
+    bool Run(std::shared_ptr<Task> fun,
+             std::optional<OnTaskFinishCallback> on_execution = std::nullopt);
 
     void StartShutdown();
     void WaitShutdown();
+
+    const std::set<std::thread::id>& GetWorkerThreadIds() const;
 
     ~ThreadPool();
 
@@ -31,14 +34,23 @@ private:
     using ElemT = std::pair<std::shared_ptr<Task>, std::optional<OnTaskFinishCallback>>;
     void PoolLoop();
     void ProcessSingleTask(ElemT&& pool_element);
+    void WaitMetaReady() const;
 
-    std::mutex mut_;
-    std::condition_variable pool_cv_;
+    mutable std::mutex mut_;
+    mutable std::condition_variable pool_cv_;
+
+    // for gathering info on started threads
+    mutable std::mutex meta_mut_;
+    mutable std::condition_variable meta_cv_;
 
     std::deque<ElemT> pool_;
     std::vector<std::thread> threads_;
+    std::set<std::thread::id> worker_thread_ids_;
+
     bool stopped_{false};
     std::atomic<bool> has_waited_for_shutdown_{false};
+    int num_started_threads_{0};
+    bool finished_gathering_meta_{false};
 };
 
 class ThreadPoolExecutor : public Executor {
@@ -61,6 +73,10 @@ public:
 
     void WaitShutdown() override {
         thread_pool_.WaitShutdown();
+    }
+
+    const std::set<std::thread::id>& GetWorkerThreadIds() const override {
+        return thread_pool_.GetWorkerThreadIds();
     }
 
 private:
@@ -87,8 +103,30 @@ Executor* GetGlobalExecutor() {
 ThreadPool::ThreadPool(int num_threads) {
     assert(num_threads > 0);
     for (int i = 0; i < num_threads; ++i) {
-        threads_.emplace_back([this] { this->PoolLoop(); });
+        threads_.emplace_back([this, num_threads] {
+            {
+                std::lock_guard lock{meta_mut_};
+
+                worker_thread_ids_.insert(std::this_thread::get_id());
+                ++num_started_threads_;
+                if (num_started_threads_ == num_threads) {
+                    finished_gathering_meta_ = true;
+                    meta_cv_.notify_all();
+                }
+            }
+            this->PoolLoop();
+        });
     }
+}
+
+void ThreadPool::WaitMetaReady() const {
+    std::unique_lock lock{meta_mut_};
+    meta_cv_.wait(lock, [this] { return finished_gathering_meta_; });
+}
+
+const std::set<std::thread::id>& ThreadPool::GetWorkerThreadIds() const {
+    WaitMetaReady();
+    return worker_thread_ids_;
 }
 
 bool ThreadPool::Run(std::shared_ptr<Task> fun, std::optional<OnTaskFinishCallback> on_execution) {
