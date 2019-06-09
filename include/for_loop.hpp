@@ -57,6 +57,9 @@ private:
     }
 
     inline bool NeedsFallback() const {
+	if (step_complexity_ == 0) {
+	    return true;
+	}
         auto tid = std::this_thread::get_id();
         if (exec_->GetWorkerThreadIds().count(tid)) {
             return true;
