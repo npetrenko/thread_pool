@@ -170,9 +170,8 @@ void ThreadPool::PoolLoop() {
         bool needs_notify;
         {
             std::unique_lock lock(mut_);
-            if (pool_.empty() && !stopped_) {
-                pool_cv_.wait(lock, [&] { return !(pool_.empty() && !stopped_); });
-            }
+            pool_cv_.wait(lock, [&] { return !(pool_.empty() && !stopped_); });
+
             if (stopped_ && pool_.empty()) {
                 return;
             }
