@@ -9,11 +9,11 @@ struct Unit {};
 
 class Task;
 
-template <class T, class FuncT>
+template <class T>
 class Future;
 
-template <class T, class FuncT>
-using FuturePtr = std::shared_ptr<Future<T, FuncT>>;
+template <class T>
+using FuturePtr = std::shared_ptr<Future<T>>;
 
 class Executor {
 public:
@@ -25,7 +25,7 @@ public:
     virtual void WaitShutdown() = 0;
 
     template <class T, class FuncT>
-    FuturePtr<T, std::decay_t<FuncT>> Invoke(FuncT&& fn);
+    FuturePtr<T> Invoke(FuncT&& fn);
 
     virtual const std::set<std::thread::id>& GetWorkerThreadIds() const = 0;
 

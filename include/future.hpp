@@ -3,15 +3,14 @@
 #include <include/executors.hpp>
 #include <include/task.hpp>
 
-template <class T, class FuncT>
+#include <functional>
+
+template <class T>
 class Future : public Task {
 public:
     friend class Executor;
 
-    explicit Future(const FuncT& func) : func_{func} {
-    }
-
-    explicit Future(FuncT&& func) : func_{std::move(func)} {
+    explicit Future(std::function<T()> func) : func_{std::move(func)} {
     }
 
     void Run() override {
@@ -30,18 +29,18 @@ public:
 
 private:
     void GetHelper() {
-        Wait();
-        if (IsFailed()) {
-            std::rethrow_exception(GetError());
+        this->Wait();
+        if (this->IsFailed()) {
+            std::rethrow_exception(this->GetError());
         }
     }
     T val_;
-    FuncT func_;
+    std::function<T()> func_;
 };
 
 template <class T, class FuncT>
-FuturePtr<T, std::decay_t<FuncT>> Executor::Invoke(FuncT&& fn) {
-    auto task = std::make_shared<Future<T, std::decay_t<FuncT>>>(std::forward<FuncT>(fn));
+FuturePtr<T> Executor::Invoke(FuncT&& fn) {
+    auto task = std::make_shared<Future<T>>(std::forward<FuncT>(fn));
     Submit(task);
     return task;
 }
