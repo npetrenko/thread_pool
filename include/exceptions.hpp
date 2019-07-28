@@ -1,3 +1,5 @@
+#pragma once
+
 #include <exception>
 
 class ThreadPoolExeption : public std::exception {
