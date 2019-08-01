@@ -1,6 +1,6 @@
-#include <include/executors.hpp>
-#include <include/task.hpp>
-#include <include/exceptions.hpp>
+#include <thread_pool/executors.hpp>
+#include <thread_pool/task.hpp>
+#include <thread_pool/exceptions.hpp>
 
 #include <thread>
 #include <mutex>

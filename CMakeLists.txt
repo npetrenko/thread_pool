@@ -13,13 +13,13 @@ set(CMAKE_CXX_FLAGS_ASAN "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined -g -O0
 
 find_package(benchmark REQUIRED)
 
-set(SRC_DIR "src")
+set(SRC_DIR "cpp")
 set(BM_DIR "benchmarks")
 
 file(GLOB CPPS "${SRC_DIR}/*.cpp")
 
 add_library(thread_pool ${CPPS})
-target_include_directories(thread_pool PUBLIC .)
+target_include_directories(thread_pool PUBLIC include)
 target_link_libraries(thread_pool pthread)
 
 add_executable(pool_bm "${BM_DIR}/benchmark.cpp")
