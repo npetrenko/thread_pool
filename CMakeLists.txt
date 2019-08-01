@@ -24,3 +24,4 @@ target_link_libraries(thread_pool pthread)
 
 add_executable(pool_bm "${BM_DIR}/benchmark.cpp")
 target_link_libraries(pool_bm benchmark thread_pool)
+set_target_properties(pool_bm PROPERTIES EXCLUDE_FROM_ALL 1)
