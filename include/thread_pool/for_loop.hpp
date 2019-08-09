@@ -6,11 +6,11 @@
 #include "future.hpp"
 
 namespace pfor_detail {
-uint8_t operator"" _u8t(unsigned long long value) {
+inline uint8_t operator"" _u8t(unsigned long long value) {
     return static_cast<uint8_t>(value);
 }
 
-size_t operator"" _sizet(unsigned long long value) {
+inline size_t operator"" _sizet(unsigned long long value) {
     return static_cast<size_t>(value);
 }
 }  // namespace pfor_detail
